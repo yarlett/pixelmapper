@@ -5,17 +5,32 @@ import random
 import time
 
 
-from pixel_maps import get_kaleidoscope_pixelmap
+from pixel_maps import get_locally_random_pixelmap, get_kaleidoscope_pixelmap
 from PIL import Image
 
 
-def get_random_pixelmap():
+def get_random_pixelmap(k):
+    """
+    Returns a random pixelmap parameterized by an integer, 0-9 inclusive, passed in.
+    """
     c = random.randint(10, 300)
-    k = random.randint(2, 30)
-    return dict(
-        map=get_kaleidoscope_pixelmap(c, c, k),
-        compute_size=(c, c),
-    )
+    if k == 0:
+        k = np.random.randint(10, 50)
+        return dict(
+            map=get_kaleidoscope_pixelmap(c, c, k),
+            compute_size=(c, c),
+        )
+    elif k == 1:
+        sigma = np.random.randint(1, 10)
+        return dict(
+            map=get_locally_random_pixelmap(c, c, sigma),
+            compute_size=(c, c),
+        )
+    else:
+        return dict(
+            map=get_kaleidoscope_pixelmap(c, c, k),
+            compute_size=(c, c),
+        )
 
 
 def get_webcam_image(camera, size):
@@ -43,7 +58,7 @@ if __name__ == "__main__":
     pygame.init()
     screen = pygame.display.set_mode(SCREEN_SIZE, pygame.FULLSCREEN)
     clock = pygame.time.Clock()
-    pxmap = get_random_pixelmap()
+    pxmap = get_random_pixelmap(2)
 
     # Event loop.
     loop = True
@@ -52,14 +67,14 @@ if __name__ == "__main__":
         # Pygame event handling.
         clock.tick(FPS)
         for event in pygame.event.get():
+            # Quit event.
             if (event.type == pygame.QUIT) or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 loop = False
-
-        # Switch pixelmap.
-        N = time.time()
-        if (N - T) > SWITCH_SECONDS:
-            pxmap = get_random_pixelmap()
-            T = N
+            # Numeric keypress event.
+            if event.type == pygame.KEYDOWN:
+                k = pygame.key.name(event.key)
+                if k in "1234567890":
+                    pxmap = get_random_pixelmap(int(k))
 
         # Get current image from the webcam.
         img = get_webcam_image(CAMERA, pxmap["compute_size"])
@@ -74,7 +89,7 @@ if __name__ == "__main__":
         img = img.swapaxes(0, 1)
 
         # Display the new frame.
-        pygame.display.set_caption(f"Frame")
+        pygame.display.set_caption("Pixemapper")
         pygame.surfarray.blit_array(screen, img)
         pygame.display.flip()
 
