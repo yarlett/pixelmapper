@@ -1,6 +1,28 @@
 import numpy as np
 
 
+def get_locally_random_pixelmap(width, height, sigma):
+    """
+    Returns a pixelmap in which pixels derive their values from randomly sampled spatially proximal pixels.
+    """
+    X = np.arange(width).reshape(1, width)
+    X = np.tile(X, (height, 1))
+    Y = np.arange(height).reshape(height, 1)
+    Y = np.tile(Y, (1, width))
+    # Add Gaussian noise to the pixel locations.
+    X += np.round(sigma * np.random.randn(*X.shape)).astype(np.int64)
+    X = np.clip(X, 0, width - 1)
+    Y += np.round(sigma * np.random.randn(*Y.shape)).astype(np.int64)
+    Y = np.clip(Y, 0, height - 1)
+    # Enumerate and return the pixelmap.
+    out = []
+    for i in range(X.shape[0]):
+        for j in range(X.shape[1]):
+            out.append((i, j, Y[i, j], X[i, j]))
+    out = np.array(out, dtype=np.int64)
+    return out
+
+
 def get_kaleidoscope_pixelmap(width, height, K):
     """
     Returns a pixel map that implements kaleidoscopic reflection of an image.
